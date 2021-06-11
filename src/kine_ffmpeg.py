@@ -6,13 +6,13 @@ import os
 from pathlib import Path
 
 
-def re_encode_video(input_path, output_path):
+def re_encode_video(input_path, output_path, width, height):
     overwrite = False
     if input_path == output_path:
         output_path = str(Path(output_path).parent / "temp.mp4")
         overwrite = True
     input_stream = ffmpeg.input(input_path)
-    video_stream_scaled = ffmpeg.filter(input_stream.video, 'scale', 640, 480)
+    video_stream_scaled = ffmpeg.filter(input_stream.video, 'scale', width, height)
     input_stream = ffmpeg.output(video_stream_scaled, input_stream.audio, output_path)
     ffmpeg.run(input_stream)
     
