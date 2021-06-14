@@ -10,7 +10,7 @@ def read_kine_files(args):
         for user_input_path in Path().iterdir():
             if user_input_path.suffix == '.kine':
                 kine_files.append(user_input_path)
-    elif len(args) >= 1:
+    else:
         for arg in args:
             # if os.path.isdir(arg):
             if Path(arg).is_dir():
@@ -19,9 +19,6 @@ def read_kine_files(args):
                         kine_files.append(user_input_path)
             else:
                 kine_files.append(arg)
-                    
-    else:
-        KineLogger.print_usage()
 
     return kine_files
 
