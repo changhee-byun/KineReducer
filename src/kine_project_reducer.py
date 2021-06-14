@@ -8,6 +8,8 @@ from pathlib import Path
 import mimetypes
 import shutil
 from PIL import Image
+from kine_logger import KineLogger
+from datetime import datetime
 
 
 def print_usage():
@@ -35,6 +37,7 @@ def read_kine_files(args):
     return kine_files
 
 def get_resources(path, filter):
+    KineLogger.debug("get resouces")
     files = pathlib.Path(path).iterdir()
     mimetypes.init()
     resources = []
@@ -44,7 +47,7 @@ def get_resources(path, filter):
             mimestart = mimestart.split('/')[0]
             #if mimestart in ['audio', 'video', 'image']:
             if mimestart in [filter]:
-                print(file)
+                KineLogger.info(file)
                 resources.append(file)
 
     return resources
@@ -81,8 +84,14 @@ def resize_images(image_resources):
 
 def run():
     try :
-        output_dir = pathlib.Path().absolute() / 'output_reducer'
+        now = datetime.now()
+        datetime_string = now.strftime("%y%m%d-%H_%M_%S")
+        output_dir = pathlib.Path().absolute() / 'output_reducer' / datetime_string
         os.makedirs(output_dir, exist_ok=True)
+        logfile_name = 'log_' + datetime_string + '.txt'
+        logfile = output_dir / logfile_name
+
+        KineLogger.set_logfile(str(logfile))
     except:
         print(traceback.format_exc())
         sys.exit()
@@ -93,6 +102,7 @@ def run():
     # args = ['/Users/CHANGHEE2/Projects/temp/kine/test']
     # args = ['./samples/20210603-4.kine']
     # args = ['/Users/CHANGHEE2/Projects/MES/KineReducer/samples/20210603-4.kine']
+    # args = ['./samples/20210603-6.kine']
     kine_files = read_kine_files(args)
 
     if kine_files.count == 0:
@@ -124,51 +134,30 @@ def run():
 
         except:
             # http://docs.python.org/2/library/sys.html#sys.exc_info
-            print(index)
-            print(traceback.format_exc())
+            KineLogger.error('file index - ' + str(index))
+            KineLogger.error(traceback.format_exc())
         else:
-            print("end of program")
+            KineLogger.info("---- Done ----")
         
     
 
 # if __name__ == '__main__':
-
-ffprobe_path = pathlib.Path(__file__).parent.absolute() / 'pre-ffmpeg' / 'ffprobe'
-pre_ffmepg_bin = str(pathlib.Path(__file__).parent.absolute() / 'pre-ffmpeg')
-
-os.system('echo $PATH')
-os.environ["PATH"] += os.pathsep + pre_ffmepg_bin
-print("-------")
-os.system('echo $PATH')
-
-# os.system("xattr -d com.apple.quarantine "+str(ffprobe_path))
-# env = os.environ.copy()
-# env['PATH'] = "{}{}{}".format(pre_ffmepg_bin, os.pathsep, env['PATH'])
-
-# old_path = os.environ['PATH']
-# try:
-#     os.environ['PATH'] = "{}{}{}".format(pre_ffmepg_bin, os.pathsep, old_path)
-#     print("correct")
-# finally:
-#     os.environ['PATH'] = old_path
-    
-run()
 
 # # working directory
 # print(pathlib.Path().absolute())
 
 # # script file directory
 # print(pathlib.Path(__file__).parent.absolute() / 'pre-ffmpeg')
-# print("--------------------")
 
 
 
 
+# # ffprobe_path = pathlib.Path(__file__).parent.absolute() / 'pre-ffmpeg' / 'ffprobe'
+# pre_ffmepg_bin = str(pathlib.Path(__file__).parent.absolute() / 'pre-ffmpeg')
+# os.environ["PATH"] += os.pathsep + pre_ffmepg_bin
+# # os.system('echo $PATH')
+    
+run()
 
-# os.system('echo $PATH')
-# print("-------------")
-# print("-------------")
-# os.system('export PATH=$PATH:'+pre_ffmepg_bin)
-# os.system('echo $PATH')
-# os.system('ffprobe')
-# os.system(ffprobe_path)
+
+
