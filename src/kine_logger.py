@@ -40,3 +40,7 @@ class KineLogger:
         console.setLevel(logging.DEBUG)
         console.setFormatter(logging.Formatter(log_format))
         logging.getLogger(cls.logfile).addHandler(console)
+
+
+def print_usage():
+    print("Usage----")

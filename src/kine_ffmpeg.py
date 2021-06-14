@@ -3,6 +3,7 @@
 
 import ffmpeg
 import os
+from kine_logger import KineLogger
 from pathlib import Path
 
 
