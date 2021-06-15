@@ -18,7 +18,8 @@ def read_kine_files(args):
                     if user_input_path.suffix == '.kine':
                         kine_files.append(user_input_path)
             else:
-                kine_files.append(arg)
+                if Path(arg).suffix == '.kine':
+                    kine_files.append(arg)
 
     return kine_files
 

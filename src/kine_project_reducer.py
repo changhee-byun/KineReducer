@@ -11,7 +11,7 @@ import argparse
 from kine_info import __VERSION__
 from kine_info import *
 
-def run():
+def run(parser):
     try :
         now = datetime.now()
         datetime_string = now.strftime("%y%m%d-%H_%M_%S")
@@ -29,13 +29,14 @@ def run():
     
     # args = sys.argv[1:]
     # print(args)
-    parser = get_parser()
+    # parser = get_parser()
     args = parser.parse_args()
 
     kine_files = fileutil.read_kine_files(args.path)
     file_count = len(kine_files)
 
     if file_count == 0:
+        KineLogger.error("Invalid path")
         parser.print_help()
         sys.exit()
 
@@ -86,9 +87,17 @@ def run():
     KineLogger.info('------------------------------------')
     KineLogger.info('----------- Work results ------------')
     KineLogger.info('| File | Result | Reduced file |')
+
+    summary = []
     for result in results:
         success = 'Success' if result[1] == True else 'Fail'
+        summary.append(success)
         KineLogger.info('| {} | {} | {} |'.format(result[0], success, result[2]))
+    
+    success_count = summary.count('Success')
+    fail_count = summary.count('Fail')
+    KineLogger.info('|')
+    KineLogger.info('| ->  Success: {} file(s) / Fail: {} file(s)'.format(success_count, fail_count))
     KineLogger.info('------------------------------------')
 
 
@@ -107,12 +116,15 @@ def get_parser():
 
 
 if __name__ == '__main__':
+    parser = get_parser()
+    parser.parse_args()
+
     # add a ffmpeg path to the system environment path.
     pre_ffmepg_bin = str(Path(__file__).parent.absolute() / FFMPEG_FOLDER)
     os.environ["PATH"] += os.pathsep + pre_ffmepg_bin
     # os.system('echo $PATH')
     
-    run()
+    run(parser)
 
 
 # # working directory
