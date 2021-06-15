@@ -24,20 +24,33 @@ def run():
     except:
         print(traceback.format_exc())
         sys.exit()
-
+    
+    KineLogger.info('Output folder -> ' + str(output_dir))
+    
     # args = sys.argv[1:]
     # print(args)
     parser = get_parser()
     args = parser.parse_args()
 
     kine_files = fileutil.read_kine_files(args.path)
+    file_count = len(kine_files)
 
-    if len(kine_files) == 0:
+    if file_count == 0:
         parser.print_help()
         sys.exit()
 
+    KineLogger.info('------------------------------------')
+    KineLogger.info('------ file(s) to be reduced -------')
+    for index, kine_file in enumerate(kine_files):        
+        KineLogger.info('{}. {}'.format(index+1, str(kine_file)))
+    KineLogger.info('------------------------------------')
+    KineLogger.info('------------------------------------')
+
+    results = []
     for index, kine_file in enumerate(kine_files):
         try:
+            KineLogger.info('---------({}/{}) current file : [{}]'.format(index+1, file_count, str(kine_file)))
+
             # unzip kinefile
             file_name = Path(kine_file).stem
             dest_path = output_dir / file_name
@@ -59,21 +72,34 @@ def run():
             zip.zip_dir(dest_path, output_dir, Path(kine_file).name)
             fileutil.delete(dest_path)
 
+            reduced_file = os.path.relpath(str(output_dir / Path(kine_file).name), Path().parent.absolute())
+            results.append(('{}. {}'.format(index+1, str(kine_file)), True, reduced_file))
         except:
             # http://docs.python.org/2/library/sys.html#sys.exc_info
-            KineLogger.error('file index - ' + str(index))
+            KineLogger.error('Failed to reduced the file [{}. {}]'.format(index+1, str(kine_file)))
             KineLogger.error(traceback.format_exc())
             fileutil.delete(dest_path)
+            results.append(('{}. {}'.format(index+1, str(kine_file)), False, 'None'))
         else:
-            KineLogger.info("---- Done ----")
+            KineLogger.info('---------({}/{}) Resize the file done. [{}]'.format(index+1, file_count, str(kine_file)))
+
+    KineLogger.info('------------------------------------')
+    KineLogger.info('----------- Work result ------------')
+    KineLogger.info('| File | Result | Reduced file |')
+    for result in results:
+        success = 'Success' if result[1] == True else 'Fail'
+        KineLogger.info('| {} | {} | {} |'.format(result[0], success, result[2]))
+    KineLogger.info('------------------------------------')
+
+
         
 def get_parser():
     parser = argparse.ArgumentParser(description='Reduce KineMaster project file size.', prog='kine_project_reducer')
     parser.add_argument('path', metavar='project file or folder path', type=str, nargs='+',
                         help='a path to .kine file(s) or foler(s) containing .kine file(s).')
-    parser.add_argument('-i', '--image', dest='image_resolution', action='store', default=720,
+    parser.add_argument('-is', '--image-scale', dest='image_resolution', action='store', default=720,
                         help='set the output image resolution with original aspect ratio. (default: 720)')
-    parser.add_argument('-v', '--video', dest='video_resolution', action='store', default=480,
+    parser.add_argument('-vs', '--video-scale', dest='video_resolution', action='store', default=480,
                         help='set the output video resolution with original aspect ratio. (default: 480)')
     parser.add_argument('-version', '--version', action='version', version='%(prog)s {}'.format(__VERSION__))
 

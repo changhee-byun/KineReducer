@@ -23,7 +23,6 @@ def read_kine_files(args):
     return kine_files
 
 def get_resources(path, filter):
-    KineLogger.debug("get resouces")
     files = Path(path).iterdir()
     mimetypes.init()
     resources = []
@@ -33,7 +32,6 @@ def get_resources(path, filter):
             mimestart = mimestart.split('/')[0]
             #if mimestart in ['audio', 'video', 'image']:
             if mimestart in [filter]:
-                KineLogger.info(file)
                 resources.append(file)
 
     return resources
