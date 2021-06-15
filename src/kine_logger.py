@@ -1,42 +1,43 @@
 import logging
 import os
 class KineLogger:
-    logfile = "log.txt"
+    name = "KineReducer"
 
     @classmethod
     def get_logger(cls):
-        return logging.getLogger(cls.logfile)
+        return logging.getLogger(cls.name)
 
     @classmethod
     def debug(cls, msg, *args, **kwargs):
-        logging.getLogger(cls.logfile).debug(msg, *args, **kwargs)
+        logging.getLogger(cls.name).debug(msg, *args, **kwargs)
 
     @classmethod
     def info(cls, msg, *args, **kwargs):
-        logging.getLogger(cls.logfile).info(msg, *args, **kwargs) 
+        logging.getLogger(cls.name).info(msg, *args, **kwargs) 
     
     @classmethod
     def warn(cls, msg, *args, **kwargs):
-        logging.getLogger(cls.logfile).warn(msg, *args, **kwargs)
+        logging.getLogger(cls.name).warn(msg, *args, **kwargs)
 
     @classmethod
     def error(cls, msg, *args, **kwargs):
-        logging.getLogger(cls.logfile).error(msg, *args, **kwargs)
+        logging.getLogger(cls.name).error(msg, *args, **kwargs)
 
     @classmethod
     def critical(cls, msg, *args, **kwargs):
-        logging.getLogger(cls.logfile).critical(msg, *args, **kwargs)    
+        logging.getLogger(cls.name).critical(msg, *args, **kwargs)    
 
     @classmethod
-    def set_logfile(cls, name):
-        logpath, logname = os.path.split(name)
-        cls.logfile = name
-        log_format = '%(asctime)s  %(module)8s  %(levelname)5s  %(message)s'
+    def set_logfile(cls, logfile_path, name='KineReducer'):
+        # logpath, logname = os.path.split(logfile_path)
+        # cls.logfile = name
+        log_format = '%(asctime)s  %(name)8s  %(levelname)5s  %(message)s'
         logging.basicConfig(level=logging.DEBUG,
                             format=log_format,
-                            filename=cls.logfile,
+                            filename=logfile_path,
                             filemode='w')
         console = logging.StreamHandler()
         console.setLevel(logging.DEBUG)
         console.setFormatter(logging.Formatter(log_format))
-        logging.getLogger(cls.logfile).addHandler(console)
+        cls.name = name
+        logging.getLogger(name).addHandler(console)

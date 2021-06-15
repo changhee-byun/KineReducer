@@ -1,5 +1,4 @@
 import kine_zip as zip
-
 import sys
 import traceback
 import os
@@ -9,8 +8,7 @@ from datetime import datetime
 import kine_file_util as fileutil
 import kine_media_resizer as resizer
 import argparse
-
-__VERSION__ = '1.0.0'
+from kine_info import __VERSION__
 
 def run():
     try :
