@@ -103,7 +103,7 @@ def run(parser):
 
         
 def get_parser():
-    parser = argparse.ArgumentParser(description='Reduce KineMaster project file size.', prog='kine_project_reducer')
+    parser = argparse.ArgumentParser(description='Reduce KineMaster project file size.', prog='KineReducer')
     parser.add_argument('path', metavar='project file or folder path', type=str, nargs='+',
                         help='a path to .kine file(s) or foler(s) containing .kine file(s).')
     parser.add_argument('-is', '--image-scale', dest='image_resolution', action='store', default=720,
