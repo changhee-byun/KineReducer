@@ -9,17 +9,18 @@ import kine_file_util as fileutil
 import kine_media_resizer as resizer
 import argparse
 from kine_info import __VERSION__
+from kine_info import *
 
 def run():
     try :
         now = datetime.now()
         datetime_string = now.strftime("%y%m%d-%H_%M_%S")
-        output_dir = Path().absolute() / 'output_reducer' / datetime_string
+        output_dir = Path().absolute() / OUTPUT_FOLDER / datetime_string
         os.makedirs(output_dir, exist_ok=True)
+
         logfile_name = 'log_' + datetime_string + '.txt'
         logfile = output_dir / logfile_name
-
-        KineLogger.set_logfile(str(logfile))
+        KineLogger.set_logfile(str(logfile), LOGGING_NAME)
     except:
         print(traceback.format_exc())
         sys.exit()
@@ -42,7 +43,7 @@ def run():
             dest_path = output_dir / file_name
             fileutil.delete(dest_path)
             zip.unzip(kine_file, dest_path)
-            contents_dir = dest_path / 'contents'
+            contents_dir = dest_path / CONTENTS
 
             # get video resource path list
             video_resources = fileutil.get_resources(contents_dir, 'video')
@@ -69,11 +70,11 @@ def run():
 def get_parser():
     parser = argparse.ArgumentParser(description='Reduce KineMaster project file size.', prog='kine_project_reducer')
     parser.add_argument('path', metavar='project file or folder path', type=str, nargs='+',
-                        help='a path to .kine file(s) or foler containing .kine file(s).')
+                        help='a path to .kine file(s) or foler(s) containing .kine file(s).')
     parser.add_argument('-i', '--image', dest='image_resolution', action='store', default=720,
-                        help='the image resolution to encode. (default: 720)')
+                        help='set the output image resolution with original aspect ratio. (default: 720)')
     parser.add_argument('-v', '--video', dest='video_resolution', action='store', default=480,
-                        help='the video resolution to encode. (default: 480)')
+                        help='set the output video resolution with original aspect ratio. (default: 480)')
     parser.add_argument('-version', '--version', action='version', version='%(prog)s {}'.format(__VERSION__))
 
     return parser
@@ -81,7 +82,7 @@ def get_parser():
 
 if __name__ == '__main__':
     # add a ffmpeg path to the system environment path.
-    pre_ffmepg_bin = str(Path(__file__).parent.absolute() / 'pre-ffmpeg')
+    pre_ffmepg_bin = str(Path(__file__).parent.absolute() / FFMPEG_FOLDER)
     os.environ["PATH"] += os.pathsep + pre_ffmepg_bin
     # os.system('echo $PATH')
     

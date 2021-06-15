@@ -1,1 +1,5 @@
 __VERSION__ = '1.0.0'
+OUTPUT_FOLDER = 'output_reducer'
+LOGGING_NAME = 'KineReducer'
+CONTENTS = 'contents'
+FFMPEG_FOLDER = 'pre-ffmpeg'
