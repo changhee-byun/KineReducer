@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "args" : ["/Users/CHANGHEE2/Projects/MES/KineReducer/samples/20210603-4.kine"]
+            "args" : ["/Users/CHANGHEE2/Projects/MES/KineReducer/samples/20210603-5.kine", "-vs", "240"]
         }
     ]
 }

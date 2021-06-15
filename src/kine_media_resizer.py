@@ -13,11 +13,11 @@ def resize_videos(video_resources, resolution):
         if ratio > 1.0:
             KineLogger.debug('-> working with the video [{}]'.format(str(video)))
             # output = copy.deepcopy(video)
-            resize_width = (width / ratio) if (width / ratio)%2 == 0 else (width / ratio) + 1
-            resize_height = (height / ratio) if (height / ratio)%2 == 0 else (height / ratio) + 1
+            resize_width = round(width / ratio) if round(width / ratio)%2 == 0 else round(width / ratio) + 1
+            resize_height = round(height / ratio) if round(height / ratio)%2 == 0 else round(height / ratio) + 1
 
             ffmpeg.re_encode_video(str(video), str(video), resize_width, resize_height)
-            KineLogger.debug('-> re-encoding the video done.')
+            KineLogger.debug('-> re-encoding the video is done.')
         else:
             KineLogger.debug('-> bypass the video. [{}]'.format(str(video)))
 
@@ -33,6 +33,6 @@ def resize_images(image_resources, resolution):
             img_resize = image.resize((int(image.width / ratio), int(image.height / ratio)))
             fileutil.delete(image_path)
             img_resize.save(image_path)
-            KineLogger.debug('-> re-encoding the image done.')
+            KineLogger.debug('-> re-encoding the image is done.')
         else:
             KineLogger.debug('-> bypass the image. [{}]'.format(str(image_path)))

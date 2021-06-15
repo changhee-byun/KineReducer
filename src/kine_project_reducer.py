@@ -81,10 +81,10 @@ def run():
             fileutil.delete(dest_path)
             results.append(('{}. {}'.format(index+1, str(kine_file)), False, 'None'))
         else:
-            KineLogger.info('---------({}/{}) Resize the file done. [{}]'.format(index+1, file_count, str(kine_file)))
+            KineLogger.info('---------({}/{}) Resizing the file is done. [{}]'.format(index+1, file_count, str(kine_file)))
 
     KineLogger.info('------------------------------------')
-    KineLogger.info('----------- Work result ------------')
+    KineLogger.info('----------- Work results ------------')
     KineLogger.info('| File | Result | Reduced file |')
     for result in results:
         success = 'Success' if result[1] == True else 'Fail'
