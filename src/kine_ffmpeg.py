@@ -14,7 +14,12 @@ def re_encode_video(input_path, output_path, width, height):
         overwrite = True
     input_stream = ffmpeg.input(input_path)
     video_stream_scaled = ffmpeg.filter(input_stream.video, 'scale', width, height)
-    input_stream = ffmpeg.output(video_stream_scaled, input_stream.audio, output_path)
+    has_audio = ffmpeg.probe(input_path, select_streams='a')
+    if has_audio['streams']:
+        input_stream = ffmpeg.output(video_stream_scaled, input_stream.audio, output_path)
+    else:
+        input_stream = ffmpeg.output(video_stream_scaled, output_path)
+
     ffmpeg.run(input_stream)
     
     if overwrite == True:
