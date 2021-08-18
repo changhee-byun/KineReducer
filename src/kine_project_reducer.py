@@ -134,7 +134,7 @@ def get_parser():
     parser.add_argument('-jo', '--json-only', dest='json_only', action='store', default='no',
                         help='generate project json document(s) without project resizing. it could be \'yes\', \'y\' or \'false\' (default: no)')
     parser.add_argument('-pj', '--print-json', dest='print_json', action='store', default='no',
-                        help='print json string on the screen while KineReducer processing it could be \'yes\', \'y\' or \'false\' (default: no)')
+                        help='print json string on the screen while KineReducer processing. it could be \'yes\', \'y\' or \'false\' (default: no)')
     parser.add_argument('-version', '--version', action='version', version='%(prog)s {}'.format(__VERSION__))
 
     return parser
