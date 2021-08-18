@@ -7,6 +7,7 @@ from kine_logger import KineLogger
 from datetime import datetime
 import kine_file_util as fileutil
 import kine_media_resizer as resizer
+import kine_protobuf_to_json as kinejson
 import argparse
 from kine_info import __VERSION__
 from kine_info import *
@@ -17,6 +18,8 @@ def run(parser):
         datetime_string = now.strftime("%y%m%d-%H_%M_%S")
         output_dir = Path().absolute() / OUTPUT_FOLDER / datetime_string
         os.makedirs(output_dir, exist_ok=True)
+        json_dir = output_dir / "json"
+        os.makedirs(json_dir, exist_ok=True)
 
         logfile_name = 'log_' + datetime_string + '.txt'
         logfile = output_dir / logfile_name
@@ -47,6 +50,13 @@ def run(parser):
     KineLogger.info('------------------------------------')
     KineLogger.info('------------------------------------')
 
+    json_only_mode = str(args.json_only).lower() in ['true', '1', 't', 'y', 'yes']
+
+    if json_only_mode:
+        KineLogger.info('')
+        KineLogger.info('>>>>>>>>>> Generating JSON Only (No Resizing) <<<<<<<<<<')
+        KineLogger.info('')
+
     results = []
     for index, kine_file in enumerate(kine_files):
         try:
@@ -59,22 +69,33 @@ def run(parser):
             zip.unzip(kine_file, dest_path)
             contents_dir = dest_path / CONTENTS
 
-            # get video resource path list
-            video_resources = fileutil.get_resources(contents_dir, 'video')
-            if len(video_resources) > 0:
-                resizer.resize_videos(video_resources, args.video_resolution)
+            if not json_only_mode:
+                # get video resource path list
+                video_resources = fileutil.get_resources(contents_dir, 'video')
+                if len(video_resources) > 0:
+                    resizer.resize_videos(video_resources, args.video_resolution)
 
-            # get image resouce path list
-            image_resouces = fileutil.get_resources(contents_dir, 'image')
-            if len(image_resouces) > 0:
-                resizer.resize_images(image_resouces, args.image_resolution)
+                # get image resouce path list
+                image_resouces = fileutil.get_resources(contents_dir, 'image')
+                if len(image_resouces) > 0:
+                    resizer.resize_images(image_resouces, args.image_resolution)
 
-            # zip dir
-            zip.zip_dir(dest_path, output_dir, Path(kine_file).name)
+                # zip dir
+                zip.zip_dir(dest_path, output_dir, Path(kine_file).name)
+
+                reduced_file = os.path.relpath(str(output_dir / Path(kine_file).name), Path().parent.absolute())
+                results.append(('{}. {}'.format(index+1, str(kine_file)), True, reduced_file))
+
+            # get kmproj file
+            kmproject_file_path = fileutil.get_kmproj_file(dest_path)
+            kinejson.kmProtobufToJson(kmproject_file_path, json_dir, file_name, str(args.print_json).lower() in ['true', '1', 't', 'y', 'yes'])
+
+            if json_only_mode:
+                json_file = os.path.relpath(str(json_dir / Path(file_name).name), Path().parent.absolute())
+                results.append(('{}. {}'.format(index+1, str(kine_file)), True, "{}.json".format(json_file)))
+
             fileutil.delete(dest_path)
 
-            reduced_file = os.path.relpath(str(output_dir / Path(kine_file).name), Path().parent.absolute())
-            results.append(('{}. {}'.format(index+1, str(kine_file)), True, reduced_file))
         except:
             # http://docs.python.org/2/library/sys.html#sys.exc_info
             KineLogger.error('Failed to reduced the file [{}. {}]'.format(index+1, str(kine_file)))
@@ -110,6 +131,10 @@ def get_parser():
                         help='set the output image resolution with original aspect ratio. (default: 720)')
     parser.add_argument('-vs', '--video-scale', dest='video_resolution', action='store', default=480,
                         help='set the output video resolution with original aspect ratio. (default: 480)')
+    parser.add_argument('-jo', '--json-only', dest='json_only', action='store', default='no',
+                        help='generate project json document(s) without project resizing. it could be \'yes\', \'y\' or \'false\' (default: no)')
+    parser.add_argument('-pj', '--print-json', dest='print_json', action='store', default='no',
+                        help='print json string on the screen while KineReducer processing it could be \'yes\', \'y\' or \'false\' (default: no)')
     parser.add_argument('-version', '--version', action='version', version='%(prog)s {}'.format(__VERSION__))
 
     return parser

@@ -23,6 +23,12 @@ def read_kine_files(args):
 
     return kine_files
 
+def get_kmproj_file(project_folder):
+    for file_path in Path(project_folder).iterdir():
+        if file_path.suffix == '.kmproject':
+            return file_path
+    return ""
+
 def get_resources(path, filter):
     files = Path(path).iterdir()
     mimetypes.init()

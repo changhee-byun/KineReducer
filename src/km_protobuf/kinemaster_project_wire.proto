@@ -1,0 +1,1044 @@
+syntax = "proto2";
+
+option java_package = "com.nexstreaming.kinemaster.wire";
+
+// KineMaster Project File General Structure
+// 
+// A KineMaster project file starts with a short 
+// file format header, as follows:
+//
+//     Bytes     Description  
+//     --------- --------------------------------------------------------------
+//     4         Four-byte magic number identifying file format; 
+//                always {0xf3,0x4b,0x4d,0xea}.
+//	   4		 File format version (currently 0x00000001).
+//
+// This is followed by a series (array) of sections.  Each section starts with a 
+// section header as follows:
+// 
+//     Bytes     Description  
+//     --------- --------------------------------------------------------------
+//     4         FOURCC identifying the seciton type
+//	   4		 Size of the section in bytes (excluding the section header.
+//
+// The file is terminated by a zero-length 'FTRX' section.  This must be the
+// last section in the file.  When saving a project file, no data should be
+// written after the FTRX section.  When reading a project file, any data
+// after the FTRX section must be ignored. A missing FTRX section should be
+// considered an incomplete or damaged project file.
+//
+// The following other section types are possible:
+//
+// 'KHDR'
+//
+//		This section is a lightweight file header designed to provide data
+//		for use in the KineMaster project gallery (to avoid having to decode
+//		the whole project to get the thumbnail or other data).  Generally, 
+//		this section should be written first when saving a project, but readers
+//		should be flexile and able to find in anywhere within the project.
+//
+//		This section consists of the KMProjectHeader structure encoded as a
+//		protocol buffer (see KMProjectHeader individual field comments for
+//		details)
+//
+// 'TLIN'
+//
+//		This section contains the timeline for the project, including all of
+//		the clips and layers in the project.
+//
+//		This consists of a KMProject structure encoded as as protocol buffer.
+//		General project settings are stored as fields in the KMProject structure.
+//		The individual clips are stored in the 'primary_items' and 
+//		'secondary_items' arrays, respectively.
+//
+//		For each primary or secondary item, there are a series of optional
+//		sub-structures, only one of which is used depending on the clip type.
+//		When reading the timeline data, first check the clip_type field, then
+//		read the appropriate one of 'visual_clip', 'audio_clip', 'text_layer',
+//		etc., based on the clip type.
+//
+// See the individual structure definitions below for details.
+//
+
+message KMProto {
+	message KMProject {
+		// Deprecated  ------------------------------------------------------
+		enum AspectRatio {
+			ASPECT_R_16_9 = 1;
+			ASPECT_SQUARE = 2;
+			ASPECT_R_9_16 = 3;
+		}
+
+		enum ClipType {
+			VISUAL_CLIP = 1;
+			TRANSITION = 2;
+			AUDIO_CLIP = 3;
+			LAYER_TEXT = 4;
+			LAYER_STICKER = 5;
+			LAYER_HANDWRITING = 6;
+			LAYER_IMAGE = 7;
+			LAYER_VIDEO = 8;
+			LAYER_EFFECT = 9;   // Do not use; deprecated
+			LAYER_ASSET = 10;
+			LAYER_GROUP = 11;
+		}
+
+		enum ClipState {
+			BUSY = 1; 
+			TEMPORARY_FAILURE = 2;
+			PERMANENT_FAILURE = 3;
+			READY_TO_PLAY = 4;
+		}
+
+		message Fade {
+			optional bool in_on = 1;
+			optional float in_seconds = 2;         // Off if unset
+			optional bool out_on = 3;
+			optional float out_seconds = 4;
+		}
+
+		optional int32 timeline_format_version = 100;
+		repeated TimelineItem primary_items = 1;
+		repeated TimelineItem secondary_items = 2;
+		repeated Track tracks = 3;
+		repeated uint32 bookmarks = 103 [packed=true];
+
+		//optional string theme_id = 104;    					// OBSOLETE
+		//optional int32 theme_music_volume = 105; 				// OBSOLETE
+		//optional bool theme_music_enabled = 106; 				// OBSOLETE
+		//optional string custom_background_music_path = 107;	// OBSOLETE
+		//optional string custom_background_music_title = 108;	// OBSOLETE
+
+		// Deprecated  ------------------------------------------------------
+		optional int32 recent_scroll_time = 109;
+
+		//optional int32 simul_audio_tracks = 110;
+		//optional int32 simul_layers_sticker = 116;
+		//optional int32 simul_layers_text = 117;
+		//optional int32 simul_layers_handwriting = 118;
+		//optional int32 simul_secondary_items = 119;
+
+		// Deprecated  ------------------------------------------------------
+		optional AspectRatio project_ratio = 111;
+
+		// Deprecated  ------------------------------------------------------
+		optional float project_audio_fade_in_time = 112;
+		optional float project_audio_fade_out_time = 113;
+		optional bool is_project_audio_fade_in_on = 114;
+		optional bool is_project_audio_fade_out_on = 115;
+		optional float project_video_fade_in_time = 120;
+		optional float project_video_fade_out_time = 121;
+		optional bool is_project_video_fade_in_on = 122;
+		optional bool is_project_video_fade_out_on = 123;
+		// ------------------------------------------------------------------
+
+		// new for project share
+		optional Fade audio_fade = 135;
+		optional Fade video_fade = 136;
+
+		optional int32 project_default_img_duration = 124;
+		optional int32 project_default_layer_duration = 125;
+
+		optional string project_default_img_crop_mode = 126;
+		optional bool project_auto_master = 127;
+		optional int32 project_master_volume = 128;
+
+		optional int32 project_resolution_setting = 129;
+		optional int32 project_frame_rate = 130;
+
+
+		// Deprecated  ------------------------------------------------------
+		optional int32 project_default_img_crop_mode_ios = 131;
+
+		optional int32 project_capability_mode = 132;
+		optional int32 aspect_ratio_width = 133;
+		optional int32 aspect_ratio_height = 134;
+        
+        optional int32 project_default_transition_duration = 137;
+
+		message Track {
+			optional int32 track_id = 1;
+			optional bool visible = 100;		// Default: True
+
+			// Volume
+			optional bool mute_audio = 101;		// Default: False
+			optional int32 clip_volume = 102;
+			optional int32 compressor = 103;	// 0: off, 4: on (default: 0)
+			optional int32 pan_left = 104;
+			optional int32 pan_right = 105;	
+			optional int32 pitch_factor = 106;
+			
+			// Alpha Adjustment
+			optional int32 overall_alpha = 107;
+			
+			// Text Styles
+			optional bool override_text_style = 110;
+			optional string text_font_id = 111;
+			optional int32 text_color = 112;
+			optional bool text_shadow = 113;
+			optional int32 text_shadow_color = 114;
+			optional bool text_glow = 115;
+			optional int32 text_glow_color = 116;
+			optional bool text_outline = 117;
+			optional int32 text_outline_color = 118;
+		}
+
+		message TimelineItem {
+			// Defines an individual primary or secondary timeline item.
+			optional uint64 unique_id_lsb = 1;	// Least significant 64 bits of the timeline item 128-bit UUID
+			optional uint64 unique_id_msb = 2;  // Most significant 64 bits of the timeline item 128-bit UUID
+			optional ClipType clip_type = 3;	// The type of this item (see ClipType enum)
+			optional int32 track_id = 14; 		// Track ID; 0 for none (primary items must be 0)
+
+			// Only one of the following is used depending on clip_type
+			optional VisualClip visual_clip = 4;				// A visual clip (video, image, etc.) on the primary timeline
+			optional Transition transition = 5;					// A transition on the primary timeline
+			optional AudioClip audio_clip = 6;					// An audio clip on the secondary timeline
+			optional TextLayer text_layer = 7;					// A text layer on the secondary timeline
+
+			// Deprecated  ------------------------------------------------------
+			optional StickerLayer sticker_layer = 8;			// A sticker layer on the secondary timeline
+
+			optional ImageLayer image_layer = 9;				// An image layer on the secondary timeline
+			optional HandwritingLayer handwriting_layer = 10;	// A handwriting layer on the secondary timeline
+			optional VideoLayer video_layer = 11;				// A video layer on the secondary timeline
+
+			// Deprecated  ------------------------------------------------------
+			optional EffectLayer effect_layer = 12;				// DO NOT USE!! This was used during dev version and show demo for effect layers; now effects are handled by AssetLayer
+
+			optional AssetLayer asset_layer = 13;				// An asset layer on the secondary timeline
+			optional GroupLayer group_layer = 15;				// An asset layer on the secondary timeline
+		}
+
+		message VisualClip {
+			// Defines a visual clip on the priamry timeline
+
+			optional string media_path = 153;				// Path to the original file (image or video)
+
+
+			// Deprecated  ------------------------------------------------------
+			// ==== Face Bounds =========================================
+			// For image clips only.  If face bounds have been detected 
+			// for this, the data is cached here to improve performance
+			// if it is needed again.  Currently, this data is only used
+			// when the default cropping is Ken Burns with Face Detection.
+			// 
+			// Face bounds are normalized to 0,0 (top,left) ~ 1,1 (bottom,right)
+			// This is the bounding rectangle of all qualifiying faces in the
+			// image.
+			optional float face_bounds_left = 100;		// Normalized face bounds (only valid if face_bounds_set is true)
+			optional float face_bounds_top = 101;
+			optional float face_bounds_right = 102;
+			optional float face_bounds_bottom = 103;
+			optional bool face_bounds_set = 104;		// True if the face bounds have been detected and cached
+			// ==========================================================
+
+
+			// Deprecated  ------------------------------------------------------
+			optional string capture_filename = 105;		// Not used in KineMaster 3.0 (but retained for compatibility with 
+														// KineMaster 2.x projects).  This is the filename where the first
+														// frame of the clip was captured and saved for use in the handwriting
+														// editor overlay.  This is still used when editing old-style handwriting
+														// clip effects from KineMaster 2.x, but not used in any project created
+														// in KineMaster 3.x.
+
+			optional int32 engine_clip_id = 106;		// Unique identifier for this clip (within the project) used to identify
+														// this clip to the NexEditor engine.
+			
+
+			// ==== Cropping =============================================
+			// Specifyies cropping of the video or image frame.
+			//
+			// Sepearate start and end cropping can be set, which results
+			// in an animated crop (for images, this is usually called the
+			// "Ken Burns" effect; for video clips, the term "Digital Zoom"
+			// is often used).
+			//
+			// Because the width and height (and therefore aspect ratio) of
+			// a clip are different when it is roated (except for perfectly
+			// square images), for simplicity, rotated start and end positions
+			// are stored separately and used when the clip is rotated at
+			// 90-degree or 270-degree angles.
+			//
+			// The start and end crop positions are stored in normalized
+			// coordinates ("abstract" means normalized in this case).
+			//
+			// Coordinates are normalized to the range 0,0 (top-left corner
+			// of the image or video clip) through 100000 (bottom-right corner
+			// of the image or video clip).  This means that if the crop area
+			// extends outside the video (for example, black bars are shown)
+			// at least some coordinates will be outside the 0~100000 range.
+			//
+			// Note that for old projects, normalized cooridnates were not
+			// used (this caused a problem when a JPEG was downsampled as
+			// it was loaded, because the downsampler in the UI and engine
+			// were different).  New projects always use normalized cooridnates.
+			// Check abstract_crop to see if normalized  coordinates
+			// are used.
+			optional bool abstract_crop = 107;			// true if normalized coordinates; false if cooridnates are based on the image coordinates from the UI-level JPEG downsampler
+			
+			optional int32 start_position_left = 108;
+			optional int32 start_position_bottom = 109;
+			optional int32 start_position_right = 110;
+			optional int32 start_position_top = 111;
+			optional int32 end_position_left = 112;
+			optional int32 end_position_bottom = 113;
+			optional int32 end_position_right = 114;
+			optional int32 end_position_top = 115;
+			
+			optional int32 rotated_start_position_left = 116;
+			optional int32 rotated_start_position_bottom = 117;
+			optional int32 rotated_start_position_right = 118;
+			optional int32 rotated_start_position_top = 119;
+			optional int32 rotated_end_position_left = 120;
+			optional int32 rotated_end_position_bottom = 121;
+			optional int32 rotated_end_position_right = 122;
+			optional int32 rotated_end_position_top = 123;
+			// ==========================================================
+
+			
+			optional int32 rotation = 124;
+			optional bool fliph = 125;
+			optional bool flipv = 126;
+
+			optional int32 diff_av_duration = 127;		// Deprecated
+			optional int32 trim_time_start = 128;
+			optional int32 trim_time_end = 129;
+
+			// Deprecated  ------------------------------------------------------
+			optional int32 trimmed_duration = 130;		// duration - trim_time_end - trim_time_start
+			optional int32 pre_trimmed_duration = 131;
+			// ------------------------------------------------------------------
+
+			optional string title_effect_id = 132;
+			optional int32 title_start_time = 133;		// Deprecated
+			optional int32 title_end_time = 134;		// Deprecated
+
+			optional int32 duration = 135;
+
+			// Deprecated  ------------------------------------------------------
+			optional int32 audio_duration = 136;
+			optional int32 video_duration = 137;
+			// ------------------------------------------------------------------
+
+			optional int32 start_overlap = 138;
+			optional int32 end_overlap = 139;
+			optional int32 width = 140;
+			optional int32 height = 141;
+
+			// Deprecated  ------------------------------------------------------
+			optional int32 original_width = 142;
+			optional int32 original_height = 143;
+			// ------------------------------------------------------------------
+
+			optional int32 clip_volume = 144;
+			optional int32 music_volume = 145;
+
+			// Deprecated  ------------------------------------------------------
+			optional TitleStyle title_style = 146;
+
+			optional bool is_image = 147;
+			optional bool mute_audio = 148;
+
+			// Deprecated  ------------------------------------------------------
+			optional bool mute_music = 149;
+			
+			optional bool has_audio = 150;
+			optional bool has_video = 151;
+
+			// Deprecated  ------------------------------------------------------
+			optional string thumb_path = 152;
+			
+			optional uint64 transition_item_uuid_lsb = 154;
+			optional uint64 transition_item_uuid_msb = 155;
+			optional TimelineItem unattached_transition = 171;
+
+			// Deprecated  ------------------------------------------------------
+			optional int32 brightness = 156;
+			optional int32 contrast = 157;
+			optional int32 saturation = 158;
+			// ------------------------------------------------------------------
+
+			optional int32 tintcolor = 159;
+			optional int32 effect_start_time = 160;
+			optional int32 effect_end_time = 161;
+
+			// Deprecated  ------------------------------------------------------
+			optional Matrix start_matrix = 162;
+			optional Matrix end_matrix = 163;
+			// ------------------------------------------------------------------
+			
+			// Deprecated  ------------------------------------------------------
+			optional ThemeEffectType auto_theme_effect = 164;
+
+			repeated int32 volume_envelope_time = 165 [packed=true];
+			repeated int32 volume_envelope_level = 166 [packed=true];
+
+			// Deprecated  ------------------------------------------------------
+			optional float clip_width = 167;
+
+			optional int32 playback_speed = 168;
+
+			// Deprecated  ------------------------------------------------------
+			optional ColorEffect color_effect = 169;
+			
+			// Deprecated  ------------------------------------------------------
+			optional StringHashMap effect_options = 170;
+
+			optional string media_msid = 174;
+
+			// Deprecated  ------------------------------------------------------
+			optional bool transcode_approved = 172;
+
+			// Deprecated  ------------------------------------------------------
+			optional ClipState clip_state = 173;
+
+			optional bool crop_link = 175;
+			optional bool is_reverse = 177;
+			optional int32 voice_changer = 178;
+			optional bool vignette = 179;
+			optional int32 pan_left = 180;
+			optional int32 pan_right = 181;
+			optional int32 compressor = 182;	// 0: off, 4: on (default: 0)
+			optional int32 pitch_factor = 183;
+
+			// Deprecated  ------------------------------------------------------
+			optional string clip_name = 184;
+
+			optional string ios_media_asset_id = 185;
+			optional bool keepPitch = 186;
+			optional bool useIFrameOnly = 187;
+			optional string enhancedAudioFilter = 188;
+			optional string equalizer = 189;
+
+			optional ClipRange clipRange = 190;
+			optional string reverb = 191;
+			optional ColorAdjustment colorAdjustment = 192;
+
+			optional ColorFilter colorFilter = 193;
+
+			repeated EffectOptionItem effectOption = 194;
+			
+			optional bool includedClipRotation = 195;
+			optional int32 uprightRotation = 196;
+		}
+		message ClipRange {
+			optional string sourcePath = 1;
+			optional string sourcePhAssetId = 2;
+			optional int64 sourceRagneStartTime = 3;
+			optional int64 sourceRagneDuration = 4;
+		}
+
+		enum EffectOptionItemType {
+			EFFECT_OPTION_TEXT = 0;
+			EFFECT_OPTION_RGB = 1;
+			EFFECT_OPTION_RGBA = 2;
+			EFFECT_OPTION_XY = 3;		// use in the future
+			EFFECT_OPTION_XYZ = 4;		// use in the future
+			EFFECT_OPTION_RECT = 5;		// use in the future
+			EFFECT_OPTION_RANGE = 6;
+			EFFECT_OPTION_CHOICE = 7;
+			EFFECT_OPTION_IMAGE = 8;	// use in the future
+			EFFECT_OPTION_SWITCH = 9;
+		}
+
+		message EffectOptionItem {
+			optional EffectOptionItemType type = 1;
+
+			// f_text
+			optional string field_name = 2;
+
+			// 사용자 입력 텍스트 "가나다라"
+			optional string value = 3;
+
+			// null : if font is not setted
+			// kmm://font/system.font.id
+			// kmm://font/builtin.font.id
+			// kmm://assetitemid/com.xxx.xxx?serveridx=1234
+			optional string text_font = 4;
+		}
+
+		// Deprecated  ------------------------------------------------------
+		message StringHashMap {
+			repeated StringHashMapEntry entries = 1;
+		}
+
+		// Deprecated  ------------------------------------------------------
+		message StringHashMapEntry {
+			optional string key = 1;
+			optional string value = 2;
+		}
+
+		message Matrix {
+			repeated float element = 1 [packed=true];
+		}
+
+		message Transition {
+			// Deprecated  ------------------------------------------------------
+			optional string captureFilename = 100;
+
+			optional string transition_effect_id = 101;
+
+			// Deprecated  ------------------------------------------------------			
+			optional ThemeEffectType auto_theme_effect = 102;
+
+			optional int32 transition_duration = 103;
+
+			// Deprecated  ------------------------------------------------------
+			optional int32 transition_engine_duration = 104;
+
+			optional int32 transition_overlap_percent = 105;
+			optional int32 transition_offset_percent = 106;
+
+			// Deprecated  ------------------------------------------------------
+			optional bool disabled = 107;
+
+			// Deprecated  ------------------------------------------------------
+			optional int32 minimum_duration = 108;
+			optional int32 maximum_duration = 109;
+			// ------------------------------------------------------------------
+			
+			// Deprecated  ------------------------------------------------------
+			optional StringHashMap effect_options = 110;
+
+			// Deprecated  ------------------------------------------------------
+			optional int32 duration_limit = 111;
+
+			// Deprecated  ------------------------------------------------------
+			optional bool allow_overlap = 112;
+
+			repeated EffectOptionItem effectOption = 113;
+		}
+
+		message AudioClip {
+			// Deprecated  ------------------------------------------------------
+			optional int32 extra_relative_start_time = 100;
+
+			optional int32 relative_start_time = 101;
+			optional int32 relative_end_time = 102;
+
+			// Deprecated  ------------------------------------------------------
+			optional int32 saved_relative_end_time = 103;
+			optional int32 saved_relative_start_time = 104;
+			// ------------------------------------------------------------------
+
+			optional int32 engine_clip_id = 105;
+			optional int32 duration = 106;
+			optional int32 trim_time_start = 107;
+			optional int32 trim_time_end = 108;
+			optional int32 saved_trim_time_start = 109;
+			optional int32 saved_trim_time_end = 110;
+			optional int32 clip_volume = 111;
+			optional string media_path = 112;
+
+			// Deprecated  ------------------------------------------------------
+			optional string original_media_path = 113;
+
+			optional string media_title = 114;
+			optional bool mute_audio = 115;
+			optional bool loop = 116;
+			optional bool is_voice_recording = 117;
+
+			// Deprecated  ------------------------------------------------------
+			optional bool is_pending_voice_recording = 118;
+			optional bool is_extract_audio = 119;
+			optional uint64 video_clip_item_uuid_lsb = 120;
+			optional uint64 video_clip_item_uuid_msb = 121;
+			// ------------------------------------------------------------------
+
+			optional bool is_bg_music = 122; // m_isUserChoiceBGMusic
+			repeated int32 volume_envelope_time = 123 [packed=true];
+			repeated int32 volume_envelope_level = 124 [packed=true];
+
+			// Deprecated  ------------------------------------------------------
+			optional float clip_width = 125;
+
+			optional bool pinned = 126;
+			optional int32 saved_loop_duration = 127;
+			optional bool extend_to_end = 128;
+
+			// Deprecated  ------------------------------------------------------
+			optional int32 voice_changer = 129;
+
+			optional int32 pan_left = 130;
+			optional int32 pan_right = 131;
+			optional int32 compressor = 132;	// 0: off, 4: on (default: 0)
+			optional int32 pitch_factor = 133;
+			optional string clip_name = 134;
+
+			// Deprecated  ------------------------------------------------------
+			optional string audio_asset_id_ios = 135;
+
+			optional string enhancedAudioFilter = 136;
+			optional string equalizer = 137;
+			optional string reverb = 138;
+		}
+
+		message LayerCommon {
+			optional int32 start_time = 100;
+			optional int32 end_time = 101;
+			optional bool pinned = 102;
+			optional int32 start_trim = 103;
+			optional int32 end_trim = 104;
+			optional int64 z_order = 105;
+
+			// Deprecated  ------------------------------------------------------
+			optional int32 layer_expression = 106;
+			optional int32 layer_expression_duration = 107;
+			// ------------------------------------------------------------------
+
+			optional int32 layer_in_expression = 109;
+			optional int32 layer_in_expression_duration = 110;
+			optional int32 layer_out_expression = 111;
+			optional int32 layer_out_expression_duration = 112;
+			optional int32 layer_overall_expression = 113;
+
+			// Deprecated  ------------------------------------------------------
+			optional float layer_overall_expression_speed = 114;
+
+			optional SplitScreenType split_screen_type = 116;
+			optional int32 split_size_left = 117;
+			optional int32 split_size_right = 118;
+			optional int32 split_size_top = 119;
+			optional int32 split_size_bottom = 120;
+			optional bool flip_h = 122;
+			optional bool flip_v = 123;
+			optional KeyFrame split_keyframe = 115;
+			repeated KeyFrame keyframes = 108;
+
+			// Deprecated  ------------------------------------------------------
+			optional int32 overall_alpha = 121;
+
+			// Deprecated  ------------------------------------------------------
+			optional bool layermask_enabled = 124;
+			optional int32 layermask_type = 125;
+			optional int32 layermask_index = 126;
+			// ------------------------------------------------------------------
+
+			optional string layer_name = 127;
+			optional float crop_bounds_left = 128;
+			optional float crop_bounds_top = 129;
+			optional float crop_bounds_right = 130;
+			optional float crop_bounds_bottom = 131;
+			optional int32 crop_bounds_shape = 132;
+			optional float crop_mask_feather = 133;
+            /* Deprecated */ optional int32 natural_orientation = 134;
+			optional bool use_crop_mask = 135;
+			optional LayerBlendModeType blend_mode = 136 [default = LAYER_BLEND_NORMAL];
+			optional float render_size_scale_x = 137;
+			optional float render_size_scale_y = 138;
+            /* Deprecated */ optional int32 videoUprightOrientation = 139;
+        }
+		message KeyFrame {
+			optional float time   = 101;
+
+			// Deprecated  ------------------------------------------------------
+			optional float scale  = 102;
+
+			optional float x      = 103;
+			optional float y      = 104;
+			optional float angle  = 105;
+			optional float alpha  = 106;
+			optional float scalex = 107;
+			optional float scaley = 108;
+		}
+
+		message TextLayer {
+			optional LayerCommon layer_common = 100;
+			optional string layer_text = 101;
+
+			// Deprecated  ------------------------------------------------------
+			optional float text_size = 102;
+			
+			optional string font_id = 103;
+			optional uint32 text_color = 104;
+			optional bool enable_shadow = 105;
+			optional uint32 shadow_color = 106;
+
+			// Deprecated  ------------------------------------------------------
+			optional float shadow_radius = 107;
+			optional float shadow_dx = 108;
+			optional float shadow_dy = 109;
+			// ------------------------------------------------------------------
+
+			optional bool enable_glow = 110;
+			optional uint32 glow_color = 111;
+
+			// Deprecated  ------------------------------------------------------
+			optional float glow_radius = 112;
+			optional int32 glow_type = 113;
+			// ------------------------------------------------------------------
+
+			optional bool enable_outline = 114;
+			optional uint32 outline_color = 115;
+
+			// Deprecated  ------------------------------------------------------
+			optional float outline_width = 116;
+			optional bool enable_gradient = 117;
+			repeated int32 gradient_colors = 118;
+			// ------------------------------------------------------------------
+
+			optional bool enable_background = 119;
+			optional uint32 background_color = 120;
+			optional bool extend_background = 121;
+			optional int32 text_align = 122; // 0: center 1: left 2: right
+			optional float shadow_angle = 123;
+			optional float shadow_distance = 124;
+			optional float shadow_spread = 125;
+			optional float shadow_size = 126;
+			optional float glow_spread = 127;
+			optional float glow_size = 128;
+			optional int32 vertical_align = 129; // 0: center 1: top 2: bottom
+			optional bool underline = 130;
+			optional float space_between_characters = 131;
+			optional float space_between_lines = 132;
+			optional bool strike_through = 133;
+			optional float outline_weight = 134;
+		}
+
+		message HandwritingLayer {
+			optional LayerCommon layer_common = 100;
+			optional int32 pivot_x = 101;
+			optional int32 pivot_y = 102;
+						/* Deprecated */  repeated WritingPoint handwriting_frame_ios = 103;
+						/* Deprecated */  repeated DrawingAction drawing_actions = 1;
+			repeated HandwritingAction actions = 104;
+
+		}
+
+		message StickerLayer {
+			optional LayerCommon layer_common = 100;
+			optional bool colorize_enabled = 101;
+			optional int32 colorize_color = 102;
+			optional int32 sticker_id = 103;
+		}
+
+		message AssetLayer {
+			enum AssetLayerType {
+				EFFECT_LAYER = 1;
+				OVERLAY_LAYER = 2;
+			}
+			optional LayerCommon layer_common = 100;
+			optional string asset_item_id = 101;
+
+			// Deprecated  ------------------------------------------------------
+			optional StringHashMap effect_options = 102;
+
+			optional AssetLayerType asset_layer_type = 103;
+
+			optional string asset_item_name_for_ios = 104;
+			optional string asset_name_for_ios = 105;
+
+			// Deprecated  ------------------------------------------------------
+			optional bool sync_xy_scale = 106;
+
+			repeated EffectOptionItem effectOption = 107;
+		}
+		message EffectLayer {
+			optional LayerCommon layer_common = 100;
+			optional string effect_id = 101;
+			optional float effect_strength = 102;
+			optional float effect_variation = 103;
+		}
+		message ImageLayer {
+			optional LayerCommon layer_common = 100;
+			optional string image_path = 101;
+
+			// Deprecated  ------------------------------------------------------
+			optional string image_msid = 102;
+
+			// Deprecated  ------------------------------------------------------
+			optional int32 brightness = 103;
+			optional int32 contrast = 104;
+			optional int32 saturation = 105;
+			optional ColorEffect color_effect = 106;
+			// ------------------------------------------------------------------
+
+			repeated DrawingAction drawing_actions = 107;
+			optional int32 chroma_key_color = 108;
+			optional bool chroma_key_enabled = 109;
+			optional float chroma_key_clip_fg = 110;
+			optional float chroma_key_clip_bg = 111;
+			optional float chroma_key_blend_x0 = 112;
+			optional float chroma_key_blend_y0 = 113;
+			optional float chroma_key_blend_x1 = 114;
+			optional float chroma_key_blend_y1 = 115;
+			optional ColorAdjustment colorAdjustment = 116;
+			optional ColorFilter colorFilter = 117;
+            optional int32 engine_clip_id = 118;        // Unique identifier for rendering of animated image to NexEditor engine
+		}
+		message VideoLayer {
+			optional LayerCommon layer_common = 100;
+			optional string video_path = 101;
+
+			// Deprecated  ------------------------------------------------------
+			optional string video_msid = 102;
+
+			// Deprecated  ------------------------------------------------------
+			optional int32 brightness = 103;
+			optional int32 contrast = 104;
+			optional int32 saturation = 105;
+			optional ColorEffect color_effect = 106;
+			// ------------------------------------------------------------------
+
+			optional int32 engine_clip_id = 107;
+			optional int32 original_clip_duration = 108;
+			optional int32 original_video_width = 109;
+			optional int32 original_video_height = 110;
+			optional bool has_audio = 111;
+			optional bool has_video = 112;
+			optional bool mute_audio = 113;
+			optional int32 clip_volume = 114;
+			optional int32 playback_speed = 115;
+			repeated int32 volume_envelope_time = 116 [packed=true];
+			repeated int32 volume_envelope_level = 117 [packed=true];
+			repeated float chroma_key_divisions = 1 [packed=true];		// Deprecated
+			repeated float chroma_key_strengths = 2 [packed=true];		// Deprecated
+			optional int32 chroma_key_color = 118;
+			optional bool chroma_key_enabled = 119;
+			optional float chroma_key_clip_fg = 120;
+			optional float chroma_key_clip_bg = 121;
+			optional float chroma_key_blend_x0 = 122;
+			optional float chroma_key_blend_y0 = 123;
+			optional float chroma_key_blend_x1 = 124;
+			optional float chroma_key_blend_y1 = 125;
+
+			// Deprecated  ------------------------------------------------------
+			optional int32 voice_changer = 126;
+
+			optional int32 pan_left = 127;
+			optional int32 pan_right = 128;
+			optional int32 compressor = 129;	// 0: off, 4: on (default: 0)
+			optional int32 pitch_factor = 130;
+
+			// Deprecated  ------------------------------------------------------
+			optional string ios_media_asset_id = 131;
+
+			optional string enhancedAudioFilter = 132;
+			optional string equalizer = 133;
+			optional ClipRange clipRange = 134;
+			optional string reverb = 135;
+			optional ColorAdjustment colorAdjustment = 136;
+			optional ColorFilter colorFilter = 137;
+			optional bool keepPitch = 138;
+			optional bool useIFrameOnly = 139;
+			// 이미지 레이어 로드시 Orientation 이 적용된 이미지를 로드하기 때문에 ImageLayer에서는 uprightOrientation 정보를 무시한다.
+			// 컨텐츠에 Orientation 이 90 인 경우 회전해야할 270 값이 설정되어야 한다
+			optional int32 uprightRotation = 140;
+		}
+		message ColorAdjustment {
+			optional float brightness = 1;		//-1.00~1.00
+			optional float contrast = 2;		//-1.00~1.00
+			optional float saturation = 3;		//-1.00~1.00
+			optional float vibrance = 4;		//-1.00~1.00
+			optional float temperature = 5;		//-1.00~1.00
+			optional float highlight = 6;		//-1.00~1.00
+			optional float shadow = 7;		//-1.00~1.00
+			optional float gain = 8;		//-1.00~1.00
+			optional float gamma = 9;		//-1.00~1.00
+			optional float lift = 10;		//-1.00~1.00
+			optional float hue = 11;		//-1.00~1.00
+		}
+		message GroupLayer {
+			optional LayerCommon layer_common = 100;
+			repeated TimelineItem child_items = 101;
+		}
+		enum SplitScreenType {
+			OFF = 0;
+			FULL = 1;
+			BOTTOM = 2;
+			TOP = 3;
+			LEFT = 4;
+			RIGHT = 5;
+		}
+		message DrawingAction {
+			optional DrawingActionType drawing_action_type = 1;
+			repeated float points = 2;
+			optional int32 color = 3;
+			optional float stroke_width = 4;
+			optional float hardness = 5;
+			optional bool is_eraser = 6;
+			optional bool straight_line = 7;
+			optional PathStyle path_style = 8;
+			optional CapDecorationStyle start_cap = 9;
+			optional CapDecorationStyle end_cap = 10;
+		}
+
+		enum DrawingType {
+			BRUSH_ERASER_ALL = 1;
+			BRUSH_ERASER = 2;
+			BRUSH_PEN = 3;
+			BRUSH_BRUSH = 4;
+			SHAPE_RECT = 5;
+			STROKE_RECT = 6;
+			SHAPE_CIRCLE = 7;
+			STROKE_CIRCLE = 8;
+			SHAPE_CROSS = 9;
+			LINE_NORMAL = 10;
+			LINE_SINGLE_ARROW = 11;
+			LINE_DOUBLE_ARROW = 12;
+		}
+
+		message WritingPoint {
+			optional float pointx = 1;
+			optional float pointy = 2;
+		}
+
+		message HandwritingAction {
+			optional DrawingType type = 1;
+			optional uint32 color = 2;                // Format: AARRGGBB  Default: AAFF0000
+			optional int32 stroke_size_index = 3;    // Range: 0~8, IOS(8, 12, 14, 16, 18, 20, 22, 26, 30), Android(3, 5, 7, 12, 17, 25, 38, 57, 86)
+			repeated WritingPoint points = 4;        // X, Y Range : 0~1f, Shape(Brush_eraser, Brush_pen, Brush_brush외)인 경우 2개 값만 유효.
+			optional float baseWidth = 5;
+			optional float baseHeight = 6;
+		}
+
+		enum PathStyle {
+			SMOOTH = 1;
+			SHARP = 2;
+			RECT = 3;
+			ROUND_RECT = 4;
+			ELLIPSE = 5;
+			XSHAPE = 6;
+			FILL_RECT = 7;
+			FILL_ROUND_RECT = 8;
+			FILL_ELLIPSE = 9;
+		}
+		enum CapDecorationStyle {
+			NONE = 1;
+			ROUND = 2;
+			SOLID_ARROW = 3;
+			HOLLOW_ARROW = 4;
+		}
+		enum DrawingActionType {
+			STROKE = 1;
+			ERASE_ALL = 2;
+		}
+		enum TitleStyle {
+			TITLE_STYLE_NONE = 0;
+			TITLE_STYLE_HEADLINE = 1;
+			TITLE_STYLE_OPENING = 2;
+			TITLE_STYLE_PLAYING = 3;
+			TITLE_STYLE_ENDING = 4;
+		}
+		enum ThemeEffectType {
+			THEME_EFFECT_TYPE_OPENING = 1;
+			THEME_EFFECT_TYPE_MIDDLE = 2;
+			THEME_EFFECT_TYPE_ENDING = 3;
+			THEME_EFFECT_TYPE_ACCENT = 4;
+			THEME_EFFECT_TYPE_TRANSITION = 5;
+			THEME_EFFECT_TYPE_CLIP = 6;
+		}
+
+		// Deprecated
+		message ColorEffect {
+			optional float brightness = 1;
+			optional float contrast = 2;
+			optional float saturation = 3;
+			optional fixed32 tint_color = 4;
+			optional string preset_name = 5;
+		}
+		message ColorFilter {
+			optional string filter = 1;
+			/*
+			* Range : 0.0f ~ 1.0f
+			* Type: float
+			* Default: 1.0f
+			*/
+			optional float strength = 2;
+		}
+		enum LayerBlendModeType {
+			LAYER_BLEND_NONE = 0;
+			LAYER_BLEND_ADD = 1;
+			LAYER_BLEND_AVERAGE = 2;
+			LAYER_BLEND_COLOR_BURN = 3;
+			LAYER_BLEND_COLOR_DODGE = 4;
+			LAYER_BLEND_DARKEN = 5;
+			LAYER_BLEND_DIFFERENCE = 6;
+			LAYER_BLEND_EXCLUSION = 7;
+			LAYER_BLEND_GLOW = 8;
+			LAYER_BLEND_HARD_LIGHT = 9;
+			LAYER_BLEND_HARD_MIX = 10;
+			LAYER_BLEND_LIGHTEN = 11;
+			LAYER_BLEND_LINEAR_BURN = 12;
+			LAYER_BLEND_LINEAR_DODGE = 13;
+			LAYER_BLEND_LINEAR_LIGHT = 14;
+			LAYER_BLEND_MULTIPLY = 15;
+			LAYER_BLEND_NEGATION = 16;
+			LAYER_BLEND_NORMAL = 17;
+			LAYER_BLEND_OVERLAY = 18;
+			LAYER_BLEND_PHOENIX = 19;
+			LAYER_BLEND_PIN_LIGHT = 20;
+			LAYER_BLEND_REFLECT = 21;
+			LAYER_BLEND_SCREEN = 22;
+			LAYER_BLEND_SOFT_LIGHT = 23;
+			LAYER_BLEND_SUBTRACT = 24;
+			LAYER_BLEND_VIVID_LIGHT = 25;
+		}
+
+	}
+
+	enum Platform {
+		IOS = 1;
+		ANDROID = 2;
+	}
+
+	message KMProjectHeader {
+
+		/*
+		 * Description: Project version number.
+		 * Type: Integer
+		 */
+		optional uint32 project_version = 1;
+
+		/*
+		 * Description: Version code.
+		 * Type: Integer
+		 */
+		optional uint32 saved_with_km_version = 2;
+
+		/*
+		 * Description: The number of milliseconds since January 1, 1970, 00:00:00 GMT represented by this date.
+		 * Type: uint64
+		 */
+		optional uint64 creation_time = 3;
+		optional uint64 last_edit_time = 4;
+
+		/*
+		 * Description: Project thumbnail(JPEG).
+		 * Type: byte array
+		 */
+		optional bytes jpeg_thumbnail = 5;
+
+		// Deprecated  ------------------------------------------------------
+		optional bool need_update_large_thumbnail = 100;
+		
+		optional uint64 project_uuid_lsb = 6;
+		optional uint64 project_uuid_msb = 7;
+
+		// Deprecated  ------------------------------------------------------
+		optional string theme_id = 101;
+		optional string bgm_theme_id = 102;
+		// ------------------------------------------------------------------
+
+		optional uint32 total_play_time = 8;
+
+		/*
+		 * Description: Kinemaster version.
+		 * Type: String
+		 * Ex: 4.13.3.15838.android
+		 */
+		optional string saved_with_km_ver_name = 103;
+
+		optional Platform saved_on_platform = 104;
+
+		// Deprecated  ------------------------------------------------------
+		optional bool using_icloud_for_ios_only = 105;
+
+		optional int32 projectAspectWidth = 106;
+		optional int32 projectAspectHeight = 107;
+		optional int32 timelineFormatVersion = 108;
+
+		optional string projectTitle = 109;
+	}
+}
