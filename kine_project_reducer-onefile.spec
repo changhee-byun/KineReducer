@@ -1,11 +1,20 @@
 # -*- mode: python ; coding: utf-8 -*-
-
+# $pyinstaller kine_project_reducer-onefile.spec
 
 block_cipher = None
 
+src = [
+    './src/kine_project_reducer.py', 
+    './src/kine_ffmpeg.py', 
+    './src/kine_zip.py', 
+    './src/kine_logger.py', 
+    './src/kine_media_resizer.py', 
+    './src/kine_info.py',
+    './src/kine_protobuf_to_json.py',
+    './src/km_protobuf/kinemaster_project_wire_pb2.py']
 
-a = Analysis(['./src/kine_project_reducer.py', './src/kine_ffmpeg.py', './src/kine_zip.py', './src/kine_logger.py', './src/kine_media_resizer.py', './src/kine_info.py'],
-             pathex=['./src'],
+a = Analysis(src,
+             pathex=['./src', './scr/km_protobuf'],
              binaries=[('./pre-ffmpeg/ffprobe', 'pre-ffmpeg'), ('./pre-ffmpeg/ffmpeg', 'pre-ffmpeg')],
              datas=[],
              hiddenimports=[],
