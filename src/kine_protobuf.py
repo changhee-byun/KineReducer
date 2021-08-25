@@ -3,8 +3,9 @@ from google.protobuf.json_format import MessageToJson
 from kine_logger import KineLogger
 from km_protobuf import kinemaster_project_wire_pb2 as KineWire
 import json
+# from enum import Enum
 
-def kmprojectToString(project_binary):
+def kmproject_to_string(project_binary):
     if project_binary.index(b'\xf3\x4b\x4d\xea') == -1:
         KineLogger.error('Invaild kmproj file.')		
         raise Exception('Invaild kmproj file.')
@@ -26,16 +27,16 @@ def kmprojectToString(project_binary):
 
     return project_header, project
 
-def kmprojectToJson(project_binary):
-    project_header, project = kmprojectToString(project_binary)
+def kmproject_to_json(project_binary):
+    project_header, project = kmproject_to_string(project_binary)
     return MessageToJson(project_header), MessageToJson(project)
 
-def kmprojectToDict(project_binary):
-    project_header, project = kmprojectToString(project_binary)
+def kmproject_to_dict(project_binary):
+    project_header, project = kmproject_to_string(project_binary)
     return MessageToDict(project_header), MessageToDict(project)
 
-def storeKmprojectToJsonFile(project_binary, path, filename, print_doc):
-    project_header, project = kmprojectToJson(project_binary)
+def store_kmproject_to_json_file(project_binary, path, filename, print_doc):
+    project_header, project = kmproject_to_json(project_binary)
 
     result = "{"
     result += "\"project\" : "
@@ -58,8 +59,8 @@ def storeKmprojectToJsonFile(project_binary, path, filename, print_doc):
 
     KineLogger.info("Json document file is created. (json/{}.json)".format(filename))
 
-def storeKmprojectToPDSInfoFile(project_binary, path, filename, print_doc):
-    project_header, project = kmprojectToDict(project_binary)
+def store_kmproject_to_PDS_info_file(project_binary, path, filename, print_doc):
+    project_header, project = kmproject_to_dict(project_binary)
 
     result = "{"
     result += "}"
@@ -84,7 +85,35 @@ def storeKmprojectToPDSInfoFile(project_binary, path, filename, print_doc):
     # assetLayer, - assetItemId
     # textLayer - fontId
 
-    specificClipTypes = [
+    # From KineMaster project proto spec.
+    # // Only one of the following is used depending on clip_type
+    # optional VisualClip visual_clip = 4;				// A visual clip (video, image, etc.) on the primary timeline
+    # optional Transition transition = 5;					// A transition on the primary timeline
+    # optional AudioClip audio_clip = 6;					// An audio clip on the secondary timeline
+    # optional TextLayer text_layer = 7;					// A text layer on the secondary timeline
+
+    # // Deprecated  ------------------------------------------------------
+    # optional StickerLayer sticker_layer = 8;			// A sticker layer on the secondary timeline
+
+    # optional ImageLayer image_layer = 9;				// An image layer on the secondary timeline
+    # optional HandwritingLayer handwriting_layer = 10;	// A handwriting layer on the secondary timeline
+    # optional VideoLayer video_layer = 11;				// A video layer on the secondary timeline
+
+    # // Deprecated  ------------------------------------------------------
+    # optional EffectLayer effect_layer = 12;				// DO NOT USE!! This was used during dev version and show demo for effect layers; now effects are handled by AssetLayer
+
+    # optional AssetLayer asset_layer = 13;				// An asset layer on the secondary timeline
+    # optional GroupLayer group_layer = 15;				// An asset layer on the secondary timeline
+
+    # class ClipKinds(str, Enum):
+    #     visualClip = 'visualClip'
+    #     transition = 'transition'
+    #     audioClip = 'audioClip'
+    #     videoLayer = 'videoLayer'
+    #     assetLayer = 'assetLayer'
+    #     textLayer = 'textLayer'
+
+    specific_clip_types = [
         ('visualClip', ['titleEffectId', 'mediaPath']), 
         ('transition', ['transitionEffectId']), 
         ('audioClip', ['mediaPath']), 
@@ -92,32 +121,56 @@ def storeKmprojectToPDSInfoFile(project_binary, path, filename, print_doc):
         ('assetLayer', ['assetItemId']), 
         ('textLayer', ['fontId'])]
 
+    SERVER_INDEX_KEYWORD = '?serveridx='
+    ASSET_ID_PREFIX = 'kmm://assetitemid/'
 
     assets = json.loads(result)
     assets['Items'] = []
-    assetsSummary = dict()
+    asset_summary = dict()
+
+    # def get_readable_kinds(name, kinds):
+    #     pos = name.find(SERVER_INDEX_KEYWORD, 0, len(asset_clip_id))
+    #     if pos != -1:
+    #         server_index = asset_clip_id[pos+len(SERVER_INDEX_KEYWORD):]
+    #         asset_name = asset_clip_id[len(ASSET_ID_PREFIX):pos]
+
+
+    def make_summary(summary, asset_clip_id, kinds):
+        pos = asset_clip_id.find(SERVER_INDEX_KEYWORD, 0, len(asset_clip_id))
+        if pos != -1:
+            server_index = asset_clip_id[pos+len(SERVER_INDEX_KEYWORD):]
+            asset_name = asset_clip_id[len(ASSET_ID_PREFIX):pos]
+            if not server_index in summary:
+                summary[server_index] = []
+            summary_item = dict(assetIndex = server_index)
+            summary_item['assetName'] = asset_name
+            summary_item['kinds'] = kinds
+            summary[server_index].append(summary_item)
+            # else:
+                
 
     def get_item(asset_item):
         item = dict(clipType=asset_item['clipType'])
-        for specificType in specificClipTypes:
-            if specificType[0] in asset_item:
-                for clipId in specificType[1]:
-                    if clipId in asset_item[specificType[0]]:
-                        item[clipId] = asset_item[specificType[0]][clipId]
-                        pos = item[clipId].find('serveridx=', 0, len(item[clipId]))
-                        if pos != -1:
-                            print(item[clipId][pos+len("serveridx="):])
+        for specific_clip_type in specific_clip_types:
+            if specific_clip_type[0] in asset_item:
+                for clip_id in specific_clip_type[1]:
+                    if clip_id in asset_item[specific_clip_type[0]]:
+                        item[clip_id] = asset_item[specific_clip_type[0]][clip_id]
+                        make_summary(asset_summary, item[clip_id], specific_clip_type[0])
         return item
 
     for primary_item in project['primaryItems']:
         item = get_item(primary_item)
         assets['Items'].append(item)
     
-    for secondary_item in project['secondaryItems']:
-        item = get_item(secondary_item)
-        assets['Items'].append(item)
+    if 'secondaryItems' in project:
+        for secondary_item in project['secondaryItems']:
+            item = get_item(secondary_item)
+            assets['Items'].append(item)
 
-    formatted_info['usedAssets'] = assets
+    formatted_info['z_assetSummary'] = asset_summary
+    formatted_info['z_extraInfosUsedAssets'] = assets
+    
 
     prettyJson = json.dumps(formatted_info, indent=4, sort_keys=True)
     fullpath = "{}/{}.json".format(path, filename)
@@ -128,15 +181,15 @@ def storeKmprojectToPDSInfoFile(project_binary, path, filename, print_doc):
 
     KineLogger.info("PDS info document file is created. (json/{}.json)".format(filename))
 
-def kmProtobufToJson(file_path, dest_path, json_file_name, print_doc):
+def km_protobuf_to_json(file_path, dest_path, json_file_name, print_doc):
     if file_path:
         KineLogger.info("Generate Json Document for {}".format(file_path))
 
         file = open(file_path, 'rb')
         try:
             body = file.read()
-            # header, project = kmprojectToDict(body)
-            storeKmprojectToJsonFile(body, dest_path, json_file_name, print_doc)
+            # header, project = kmproject_to_dict(body)
+            store_kmproject_to_json_file(body, dest_path, json_file_name, print_doc)
         except Exception as e:
             KineLogger.error("Failed to generate Json document.")
             KineLogger.error(e)
@@ -145,15 +198,15 @@ def kmProtobufToJson(file_path, dest_path, json_file_name, print_doc):
     else:
         KineLogger.error("Failed to generate Json document.")
 
-def kmProtobufToPDSInfo(file_path, dest_path, json_file_name, print_doc):
+def km_protobuf_to_PDS_info(file_path, dest_path, json_file_name, print_doc):
     if file_path:
         KineLogger.info("Generate Json Document for {}".format(file_path))
 
         file = open(file_path, 'rb')
         try:
             body = file.read()
-            # header, project = kmprojectToDict(body)
-            storeKmprojectToPDSInfoFile(body, dest_path, json_file_name, print_doc)
+            # header, project = kmproject_to_dict(body)
+            store_kmproject_to_PDS_info_file(body, dest_path, json_file_name, print_doc)
         except Exception as e:
             KineLogger.error("Failed to generate Json document.")
             KineLogger.error(e)
@@ -162,6 +215,6 @@ def kmProtobufToPDSInfo(file_path, dest_path, json_file_name, print_doc):
     else:
         KineLogger.error("Failed to generate Json document.")
 
-# kmProtobufToJson("./km_protobuf/Retro intro.kmproject")
-kmProtobufToJson("./samples/AssetTestMine/AssetTestMine.kmproject", "./reducer_output/test", "proto-info", False)
-kmProtobufToPDSInfo("./samples/AssetTestMine/AssetTestMine.kmproject", "./reducer_output/test", "pds-info", False)
+# km_protobuf_to_json("./km_protobuf/Retro intro.kmproject")
+km_protobuf_to_json("./samples/AssetTestMine/AssetTestMine.kmproject", "./reducer_output/test", "proto-info", False)
+km_protobuf_to_PDS_info("./samples/AssetTestMine/AssetTestMine.kmproject", "./reducer_output/test", "pds-info", False)

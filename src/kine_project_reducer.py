@@ -20,6 +20,10 @@ def run(parser):
         os.makedirs(output_dir, exist_ok=True)
         json_dir = output_dir / "json"
         os.makedirs(json_dir, exist_ok=True)
+        project_json_dir = json_dir / "project"
+        os.makedirs(project_json_dir, exist_ok=True)
+        pds_info_json_dir = json_dir / "PDS_info"
+        os.makedirs(pds_info_json_dir, exist_ok=True)
 
         logfile_name = 'log_' + datetime_string + '.txt'
         logfile = output_dir / logfile_name
@@ -88,10 +92,11 @@ def run(parser):
 
             # get kmproj file
             kmproject_file_path = fileutil.get_kmproj_file(dest_path)
-            kinejson.kmProtobufToJson(kmproject_file_path, json_dir, file_name, str(args.print_json).lower() in ['true', '1', 't', 'y', 'yes'])
+            kinejson.km_protobuf_to_json(kmproject_file_path, project_json_dir, file_name, str(args.print_json).lower() in ['true', '1', 't', 'y', 'yes'])
+            kinejson.km_protobuf_to_PDS_info(kmproject_file_path, pds_info_json_dir, "{}(PDS)".format(file_name), str(args.print_json).lower() in ['true', '1', 't', 'y', 'yes'])
 
             if json_only_mode:
-                json_file = os.path.relpath(str(json_dir / Path(file_name).name), Path().parent.absolute())
+                json_file = os.path.relpath(str(project_json_dir / Path(file_name).name), Path().parent.absolute())
                 results.append(('{}. {}'.format(index+1, str(kine_file)), True, "{}.json".format(json_file)))
 
             fileutil.delete(dest_path)
