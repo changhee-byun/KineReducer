@@ -10,7 +10,7 @@ src = [
     './src/kine_logger.py', 
     './src/kine_media_resizer.py', 
     './src/kine_info.py',
-    './src/kine_protobuf_to_json.py',
+    './src/kine_protobuf.py',
     './src/km_protobuf/kinemaster_project_wire_pb2.py']
 
 a = Analysis(src,
