@@ -140,12 +140,13 @@ def store_kmproject_to_PDS_info_file(project_binary, path, filename, print_doc):
         if pos != -1:
             server_index = asset_clip_id[pos+len(SERVER_INDEX_KEYWORD):]
             asset_name = asset_clip_id[len(ASSET_ID_PREFIX):pos]
-            if not server_index in summary:
-                summary[server_index] = []
+            key_name = 'idx{}'.format(server_index)
+            if not key_name in summary:
+                summary[key_name] = []
             summary_item = dict(assetIndex = server_index)
             summary_item['assetName'] = asset_name
             summary_item['kinds'] = kinds
-            summary[server_index].append(summary_item)
+            summary[key_name].append(summary_item)
             # else:
                 
 
