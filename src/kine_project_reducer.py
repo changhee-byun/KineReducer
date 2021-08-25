@@ -7,7 +7,7 @@ from kine_logger import KineLogger
 from datetime import datetime
 import kine_file_util as fileutil
 import kine_media_resizer as resizer
-import kine_protobuf_to_json as kinejson
+import kine_protobuf as kinejson
 import argparse
 from kine_info import __VERSION__
 from kine_info import *
