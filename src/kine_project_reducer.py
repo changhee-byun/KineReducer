@@ -32,6 +32,7 @@ def run(parser):
         print(traceback.format_exc())
         sys.exit()
     
+    KineLogger.info('[ KineReducer v{} ]'.format(__VERSION__))
     KineLogger.info('Output folder -> ' + str(output_dir))
     
     # args = sys.argv[1:]
