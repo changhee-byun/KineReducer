@@ -34,10 +34,17 @@ def re_encode_video(input_path, output_path, width, height, rotate):
     video_stream_filter = ffmpeg.filter(video_stream_filter, 'scale', width, height)
     
     has_audio = ffmpeg.probe(input_path, select_streams='a')
-    if has_audio['streams']:
-        input_stream = ffmpeg.output(video_stream_filter, input_stream.audio, output_path)
+
+    if has_10_bit_depth(input_path):
+        args = {'vcodec':'libx265'}
     else:
-        input_stream = ffmpeg.output(video_stream_filter, output_path)
+        args = {}
+
+    if has_audio['streams']:
+        # input_stream = ffmpeg.output(video_stream_filter, input_stream.audio, output_path, vcodec='libx265')
+        input_stream = ffmpeg.output(video_stream_filter, input_stream.audio, output_path, **args)
+    else:
+        input_stream = ffmpeg.output(video_stream_filter, output_path, **args)
 
     ffmpeg.run(input_stream)
 
@@ -144,3 +151,32 @@ def get_video_resolution(path):
     except :
         rotate = 0
     return video_stream['width'], video_stream['height'], rotate
+
+def has_10_bit_depth(path):
+    video_stream = ffmpeg.probe(path, select_streams = "v")['streams'][0]
+
+    # trying to print a bit depth. it's not working.
+    # args = {"loglevel": "panic",
+    #         "show_entries": "stream=bits_per_raw_sample",
+    #         "select_streams": "v",
+    #         }
+    # print(ffmpeg.probe(path , **args))
+    
+
+    # For bit-depth=8 of libx264 it will be something like:
+    #     Supported pixel formats: yuv420p yuvj420p yuv422p yuvj422p yuv444p yuvj444p nv12 nv16
+    # And for bit-depth=10 of libx264 it will be something like:
+    #     Supported pixel formats: yuv420p10le yuv422p10le yuv444p10le nv20le
+
+    bit_depth_8_support_pix_fmt =  ['yuv420p', 'yuvj420p', 'yuv422p', 'yuvj422p', 'yuv444p', 'yuvj444p', 'nv12', 'nv16']
+    bit_depth_10_support_pix_fmt = ['yuv420p10le', 'yuv422p10le', 'yuv444p10le', 'nv20le']
+    
+    support_10_bit = False
+
+    try :
+        if video_stream['pix_fmt'] in bit_depth_10_support_pix_fmt:
+            support_10_bit = True
+    except :
+        support_10_bit = False
+
+    return support_10_bit
