@@ -36,7 +36,9 @@ def re_encode_video(input_path, output_path, width, height, rotate):
     has_audio = ffmpeg.probe(input_path, select_streams='a')
 
     if has_10_bit_depth(input_path):
-        args = {'vcodec':'libx265'}
+        # default codec ID(vtag) is 'hev1' by x265. But 'hev1' is not playable on iOS and MacOS.
+        # we need to change the vtag to 'hvc1' from 'hev1'.
+        args = {'vcodec':'libx265', 'vtag':'hvc1'} 
     else:
         args = {}
 
