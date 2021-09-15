@@ -1,4 +1,4 @@
-__VERSION__ = '1.2.2'
+__VERSION__ = '1.2.3'
 OUTPUT_FOLDER = 'reducer_output'
 LOGGING_NAME = 'KineReducer'
 CONTENTS = 'contents'
