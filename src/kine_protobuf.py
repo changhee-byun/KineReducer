@@ -219,3 +219,5 @@ def km_protobuf_to_PDS_info(file_path, dest_path, json_file_name, print_doc):
 # km_protobuf_to_json("./km_protobuf/Retro intro.kmproject")
 # km_protobuf_to_json("./samples/AssetTestMine/AssetTestMine.kmproject", "./reducer_output/test", "proto-info", False)
 # km_protobuf_to_PDS_info("./samples/AssetTestMine/AssetTestMine.kmproject", "./reducer_output/test", "pds-info", False)
+# km_protobuf_to_json("./samples/abc/abc.kmproject", "./reducer_output/test", "proto-info", False)
+# km_protobuf_to_PDS_info("./samples/abc/abc.kmproject", "./reducer_output/test", "pds-info", False)

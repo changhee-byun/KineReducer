@@ -10,7 +10,8 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "args" : ["/Users/CHANGHEE2/Projects/MES/KineReducer/samples", "-jo", "y", "-pj", "no"]
+            "args" : ["/Users/CHANGHEE2/Projects/MES/KineReducer/samples/RotateError/RetroIntro.kine", "-vs", "480"]
+            // "args" : ["/Users/CHANGHEE2/Projects/MES/KineReducer/samples", "-jo", "y", "-pj", "no"]
             // "args" : ["/Users/CHANGHEE2/Projects/MES/KineReducer/samples/Retro intro 1080.kine", "-jo", "y"]
             //"args" : ["/Users/CHANGHEE2/Projects/MES/KineReducer/samples/KineMaster 5.0 Trailer.kine", "-vs", "240"]
         }

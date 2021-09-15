@@ -8,15 +8,16 @@ def resize_videos(video_resources, resolution):
     KineLogger.debug('---- Resize videos')
     # reduce video resource size
     for video in video_resources:        
-        width, height = ffmpeg.get_video_resolution(video)
+        width, height, rotate_info = ffmpeg.get_video_resolution(video)
         ratio = min(width / float(resolution), height / float(resolution))
         if ratio > 1.0:
             KineLogger.debug('-> working with the video [{}]'.format(str(video)))
             # output = copy.deepcopy(video)
             resize_width = round(width / ratio) if round(width / ratio)%2 == 0 else round(width / ratio) + 1
             resize_height = round(height / ratio) if round(height / ratio)%2 == 0 else round(height / ratio) + 1
+            rotate = int(float(rotate_info))
 
-            ffmpeg.re_encode_video(str(video), str(video), resize_width, resize_height)
+            ffmpeg.re_encode_video(str(video), str(video), resize_width, resize_height, rotate)
             KineLogger.debug('-> re-encoding the video is done.')
         else:
             KineLogger.debug('-> bypass the video. [{}]'.format(str(video)))
