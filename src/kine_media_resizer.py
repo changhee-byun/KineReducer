@@ -27,7 +27,10 @@ def resize_images(image_resources, resolution):
     for image_path in image_resources:
         image = Image.open(image_path)
         width, height = image.size
-        exif = image.info['exif']
+        if 'exif' in image.info:
+            exif = image.info['exif']
+        else:
+            exif = None
         ratio = min(width / float(resolution), height / float(resolution))
         if ratio > 1.0:
             KineLogger.debug('-> working with the image [{}]'.format(str(image_path)))
