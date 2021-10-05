@@ -27,13 +27,14 @@ def resize_images(image_resources, resolution):
     for image_path in image_resources:
         image = Image.open(image_path)
         width, height = image.size
+        exif = image.info['exif']
         ratio = min(width / float(resolution), height / float(resolution))
         if ratio > 1.0:
             KineLogger.debug('-> working with the image [{}]'.format(str(image_path)))
             title, ext = os.path.splitext(image_path)
             img_resize = image.resize((int(image.width / ratio), int(image.height / ratio)))
             fileutil.delete(image_path)
-            img_resize.save(image_path)
+            img_resize.save(image_path, exif=exif)
             KineLogger.debug('-> re-encoding the image is done.')
         else:
             KineLogger.debug('-> bypass the image. [{}]'.format(str(image_path)))
