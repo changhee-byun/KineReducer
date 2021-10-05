@@ -13,6 +13,7 @@ def re_encode_video(input_path, output_path, width, height, rotate):
         output_path = str(Path(output_path).parent / "temp.mp4")
         overwrite = True
     input_stream = ffmpeg.input(input_path)
+    # ffmpeg.nodes.get_stream_spec_nodes(input_stream)[0].kwargs['noautorotate'] = ''
 
     video_stream_filter = input_stream.video
 
@@ -63,7 +64,13 @@ def write_rotate_metadata(input_path, output_path, rotation):
         output_path = str(Path(output_path).parent / "temp_rotate.mp4")
         overwrite = True
 
-    metadata_rotate = str(rotation) if rotation <= 180 else str(180 + rotation)
+    ## Possible rotation metadata in video are 0, 90, 180, 270.
+    ## I don't fully understand, but we need to add 180 to write the rotation data we want.     
+    # metadata_rotate = str(180 + rotation) ## keep original rotation.
+
+    ## match preview screen and timeline thumbnail.
+    ## 90->90, 180->180, 270->90. (270 is highly likely to be incorrect rotation.)
+    metadata_rotate = str(180 + rotation) if rotation <= 90 else str(rotation)
     (
         ffmpeg.input(input_path)
         .output(output_path, vcodec='copy', acodec='copy', **{'metadata:s:v': 'rotate='+metadata_rotate})
