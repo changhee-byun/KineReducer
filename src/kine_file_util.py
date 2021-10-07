@@ -30,6 +30,9 @@ def get_kmproj_file(project_folder):
     return ""
 
 def get_resources(path, filter):
+    if not path.exists():
+        return []
+        
     files = Path(path).iterdir()
     mimetypes.init()
     resources = []
