@@ -146,7 +146,16 @@ def store_kmproject_to_PDS_info_file(project_binary, path, filename, print_doc):
             summary_item = dict(assetIndex = server_index)
             summary_item['assetName'] = asset_name
             summary_item['kinds'] = kinds
-            summary[key_name].append(summary_item)
+            summary_item['numberOfUses'] = 1
+
+            doesExist = False
+            for item in summary[key_name]:
+                if item['assetIndex'] == summary_item['assetIndex'] and item['assetName'] == summary_item['assetName']:
+                    doesExist = True
+                    item['numberOfUses'] = item['numberOfUses'] + 1
+                    break
+            if not doesExist:
+                summary[key_name].append(summary_item)
             # else:
                 
 
