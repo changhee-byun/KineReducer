@@ -37,7 +37,11 @@ def resize_images(image_resources, resolution):
             title, ext = os.path.splitext(image_path)
             img_resize = image.resize((int(image.width / ratio), int(image.height / ratio)))
             fileutil.delete(image_path)
-            img_resize.save(image_path, exif=exif)
+            if exif == None:
+                KineLogger.debug('-> EXIF does not exists ')
+                img_resize.save(image_path)
+            else:
+                img_resize.save(image_path, exif=exif)
             KineLogger.debug('-> re-encoding the image is done.')
         else:
             KineLogger.debug('-> bypass the image. [{}]'.format(str(image_path)))
